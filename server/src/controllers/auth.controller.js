@@ -20,6 +20,12 @@ const SignIn = async (req, res) => {
 
 	try {
 		const payload = await AuthService.SignIn(userData)
+
+		res.cookie('token', payload.token, {
+			httpOnly: true,
+			secure: false, // -> change to true when in production
+		})
+
 		res.status(payload.status).json(payload.message)
 	} catch (err) {
 		logger.error(`Error in AuthController.SignIn: ${err.message}`)
@@ -28,10 +34,17 @@ const SignIn = async (req, res) => {
 }
 
 const SignOut = async (req, res) => {
-	const { userId } = req.params
+	const token = req.cookies.token
 
 	try {
-		const payload = await AuthService.SignOut(userId)
+		const payload = await AuthService.SignOut(token)
+
+		res.clearCookie('token')
+		res.cookie('token', '', {
+			httpOnly: true,
+			expires: new Date(0),
+		})
+
 		res.status(200).json(payload)
 	} catch (err) {
 		logger.error(`Error in AuthController.SignOut: ${err.message}`)

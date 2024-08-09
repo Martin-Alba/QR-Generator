@@ -28,6 +28,7 @@ const userSchema = new mongoose.Schema({
 			ref: 'QR',
 		},
 	],
+	// -> add the following fields after implementing the reset password feature (code and expiration)
 })
 
 const UserModel = mongoose.model('User', userSchema)

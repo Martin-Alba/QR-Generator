@@ -7,7 +7,7 @@ router.post('/signup', AuthController.SignUp)
 
 router.post('/signin', AuthController.SignIn)
 
-router.post('/signout/:userId', AuthController.SignOut)
+router.post('/signout/', AuthController.SignOut)
 
 router.post('/forgotpassword', AuthController.ForgotPassword)
 

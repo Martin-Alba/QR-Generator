@@ -1,3 +1,4 @@
+import jwt from 'jsonwebtoken'
 import UserModel from '../models/user.model.js'
 import logger from '../utils/logger.js'
 import Hash from '../utils/hash.js'
@@ -55,9 +56,30 @@ const SignIn = async (userData) => {
 			return { status: 401, message: 'Invalid password' }
 		}
 
+		const dataToken = {
+			id: user._id,
+			username: user.username,
+			date: new Date().toLocaleString('en-US', {
+				weekday: 'short',
+				year: 'numeric',
+				month: 'short',
+				day: '2-digit',
+				hour: '2-digit',
+				minute: '2-digit',
+				hour12: false,
+			}),
+		}
+
+		const token = jwt.sign(dataToken, process.env.JWT_SECRET, {
+			expiresIn: process.env.TOKEN_EXPIRATION,
+		})
+
+		await UserModel.findByIdAndUpdate(user._id, { $set: { token } })
+
 		return {
 			status: 200,
 			message: `User ${user.username} signed in successfully`,
+			token,
 		}
 	} catch (err) {
 		logger.error(`Error in AuthService.SignIn: ${err.message}`)
@@ -65,13 +87,15 @@ const SignIn = async (userData) => {
 	}
 }
 
-const SignOut = async (userId) => {
-	// -> refactorizar con jwt
+const SignOut = async (token) => {
 	try {
-		if (!userId) {
-			logger.warn('Missing required fields')
-			throw new Error('Missing required fields')
+		if (!token) {
+			logger.warn('Token is required')
+			return { status: 401, message: 'Token is required' }
 		}
+
+		const decoded = jwt.verify(token, process.env.JWT_SECRET)
+		const userId = decoded.id
 
 		const user = await UserModel.findByIdAndUpdate(userId, {
 			$set: { token: '' },
