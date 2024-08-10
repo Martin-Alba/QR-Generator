@@ -17,7 +17,7 @@ const userSchema = new mongoose.Schema({
 	},
 	token: {
 		type: String,
-		// -> required: true, luego de implementar JWT
+		default: '',
 	},
 	avatar: {
 		type: Buffer,
