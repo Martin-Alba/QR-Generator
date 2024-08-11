@@ -29,7 +29,6 @@ const SignUp = async (userData) => {
 			email,
 		})
 
-		logger.info(`User ${username} created successfully`)
 		return { status: 201, message: `User ${username} created successfully` }
 	} catch (err) {
 		logger.error(`Error in AuthService.SignUp: ${err.message}`)
@@ -106,7 +105,6 @@ const SignOut = async (token) => {
 			throw new Error('User not found')
 		}
 
-		logger.info(`User ${user.username} signed out successfully`)
 		return { message: 'User signed out successfully' }
 	} catch (err) {
 		logger.error(`Error in AuthService.SignOut: ${err.message}`)

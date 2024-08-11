@@ -21,8 +21,6 @@ const createQrWithoutUser = async (data, token) => {
 		if (data?.company) qrData.push(`Company: ${data.company}\n`)
 		if (data?.web) qrData.push(`Web: ${data.web}\n`)
 
-		logger.debug('QR Data:', qrData)
-
 		if (qrData.length === 0) {
 			logger.error('No valid data provided to create QR code')
 			return {
@@ -44,7 +42,6 @@ const createQrWithoutUser = async (data, token) => {
 			})
 		}
 
-		logger.info('QR code created successfully')
 		return {
 			status: 201,
 			message: 'QR code created successfully',
@@ -60,16 +57,107 @@ const createQrForUser = async () => {
 	// Code here
 }
 
-const getAllQrByUser = async () => {
-	// Code here
+const getAllQrByUser = async (token) => {
+	try {
+		if (!token) {
+			logger.error('No token provided to fetch QR codes')
+			return { status: 400, message: 'No token provided' }
+		}
+
+		const decodedToken = jwt.verify(token, process.env.JWT_SECRET)
+		const userId = decodedToken.id
+
+		const user = await UserModel.findById(userId)
+			.select('qrCodes')
+			.populate('qrCodes')
+
+		if (!user) {
+			logger.error('User not found or has no QR codes')
+			return { status: 404, message: 'User not found or has no QR codes' }
+		}
+
+		return {
+			status: 200,
+			message: 'QR codes fetched successfully',
+			qrCodes: user.qrCodes,
+		}
+	} catch (err) {
+		logger.error(`Error in QrService.getAllQrByUser: ${err.message}`)
+		throw new Error('An error occurred while fetching all QRs')
+	}
 }
 
-const getQrById = async () => {
-	// Code here
+const getQrById = async (qrId, token) => {
+	try {
+		if (!qrId || !token) {
+			logger.error('No QR ID or token provided to fetch QR code')
+			return { status: 400, message: 'No QR ID or token provided' }
+		}
+
+		const decodedToken = jwt.verify(token, process.env.JWT_SECRET)
+		const userId = decodedToken.id
+
+		const userQr = await UserModel.findOne({ _id: userId, qrCodes: qrId })
+			.select('qrCodes')
+			.populate('qrCodes')
+
+		if (!userQr) {
+			logger.error('QR not found or does not belong to user')
+			return { status: 404, message: 'QR not found or does not belong to user' }
+		}
+
+		const qrCodes = userQr.qrCodes.find((qr) => qr._id.toString() === qrId)
+
+		if (!qrCodes) {
+			logger.error('QR code not found in the database')
+			return { status: 404, message: 'QR code not found in the database' }
+		}
+
+		return {
+			status: 200,
+			message: 'QR fetched successfully',
+			QR: qrCodes.qrCode,
+		}
+	} catch (err) {
+		logger.error(`Error in QrService.getQrById: ${err.message}`)
+		throw new Error('An error occurred while fetching the QR')
+	}
 }
 
-const deleteQr = async () => {
-	// Code here
+const deleteQr = async (qrId, token) => {
+	try {
+		if (!qrId || !token) {
+			logger.error('No QR ID or token provided to delete QR code')
+			return { status: 400, message: 'No QR ID or token provided' }
+		}
+
+		const decodedToken = jwt.verify(token, process.env.JWT_SECRET)
+		const userId = decodedToken.id
+
+		const user = await UserModel.findById(userId).select('qrCodes')
+
+		if (!user) {
+			logger.error('User not found or has no QR codes')
+			return { status: 404, message: 'User not found or has no QR codes' }
+		}
+
+		const qrBelongsToUser = user.qrCodes.includes(qrId)
+
+		if (!qrBelongsToUser) {
+			logger.error('QR code does not belong to user')
+			return { status: 403, message: 'QR code does not belong to user' }
+		}
+
+		await QRModel.findByIdAndDelete(qrId)
+
+		user.qrCodes = user.qrCodes.filter((id) => id.toString() !== qrId)
+		await user.save()
+
+		return { status: 200, message: 'QR deleted successfully' }
+	} catch (err) {
+		logger.error(`Error in QrService.deleteQr: ${err.message}`)
+		throw new Error('An error occurred while deleting the QR')
+	}
 }
 
 const QrService = {
