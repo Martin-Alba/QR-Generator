@@ -6,6 +6,7 @@ const SignUp = async (req, res) => {
 
 	try {
 		const payload = await AuthService.SignUp(userData)
+
 		res.status(payload.status).json(payload.message)
 	} catch (err) {
 		logger.error(`Error in AuthController.SignUp: ${err.message}`)

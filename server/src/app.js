@@ -20,4 +20,5 @@ app.get('/', (req, res) => {
 app.use('/api/auth', AuthRoutes)
 app.use('/api/user', UserRoutes)
 app.use('/api/qr', QrRoutes)
+
 ServerUp(app)
